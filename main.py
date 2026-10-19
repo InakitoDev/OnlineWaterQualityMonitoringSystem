@@ -31,7 +31,7 @@ oxygen = OxygenSensor(
     config["oxygen"]["unit"]
 )
 
-# voorbeeldstromen
+# Example currents
 
 temp_current = 12
 ph_current = 11
