@@ -1,7 +1,7 @@
-from sensor import Sensor
+from sensors.sensor import Sensor
 
 
-class OxygenSensor(Sensor):
+class PHSensor(Sensor):
 
     def read(self, current):
         return self.current_to_value(current)

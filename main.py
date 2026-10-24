@@ -1,8 +1,8 @@
 import json
 
-from temperaturesensor import TemperatureSensor
-from phsensor import PHSensor
-from oxygensensor import OxygenSensor
+from sensors.temperaturesensor import TemperatureSensor
+from sensors.phsensor import PHSensor
+from sensors.oxygensensor import OxygenSensor
 
 with open("config.json") as file:
     config = json.load(file)
