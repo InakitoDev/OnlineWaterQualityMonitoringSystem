@@ -8,7 +8,7 @@ class Sensor:
 
     def current_to_value(self, current):
         """
-        Zet 4-20mA om naar engineering units
+        Convert 4-20mA to engineering units
         """
 
         value = (
@@ -22,3 +22,6 @@ class Sensor:
 
     def read(self):
         raise NotImplementedError
+    
+    def get_channel(self):
+        return self.channel
