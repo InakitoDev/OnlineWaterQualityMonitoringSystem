@@ -52,14 +52,17 @@ temperature_sensor, ph_sensor, oxygen_sensor = setup_sensors(config)
 create_database()
 logger = DataLogger()
 
+alarm_service = AlarmService(config)
 
-service = MeasurementService(temperature_sensor, ph_sensor, oxygen_sensor, logger)
+measurement_service = MeasurementService(temperature_sensor, ph_sensor, oxygen_sensor, logger)
 
 while True:
 
-    measurement = service.collect_measurement()
+    measurement = measurement_service.collect_measurement()
+    alarms = alarm_service.check_all(measurement["temperature"], measurement["ph"], measurement["oxygen"])
     
     print(measurement)
+    print(alarms)
 
     time.sleep(60)
 
