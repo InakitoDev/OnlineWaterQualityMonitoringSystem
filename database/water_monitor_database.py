@@ -19,9 +19,26 @@ def create_database():
             )
         """)
 
+        # Alarm table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alarms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                sensor TEXT,
+                value REAL,
+                status TEXT
+            )
+        """)
+
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_measurements_timestamp
             ON measurements(timestamp)
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_alarms_timestamp
+            ON alarms(timestamp)
         """)
 
 
@@ -82,3 +99,39 @@ def get_measurements_between(start_time, end_time):
         """, (start_time, end_time))
 
         return cursor.fetchall()
+
+def insert_alarm(sensor, value, status):
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO alarms
+        (
+            sensor,
+            value,
+            status
+        )
+        VALUES (?, ?, ?)
+    """, (sensor, value, status))
+ 
+    conn.commit()
+    conn.close()
+
+def get_alarm_history(limit=50):
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM alarms
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (limit,))
+
+    alarms = cursor.fetchall()
+
+    conn.close()
+
+    return alarms
