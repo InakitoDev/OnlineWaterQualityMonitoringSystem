@@ -57,3 +57,23 @@ class AlarmService:
             insert_alarm(sensor_name, value, "NORMALIZED")
 
         return None
+
+    def check_all(self, temperature, ph, oxygen):
+        alarms = []
+
+        temp_alarm = self.check_alarm( "temperature", temperature)
+
+        ph_alarm = self.check_alarm("ph", ph)
+
+        oxygen_alarm = self.check_alarm("oxygen", oxygen)
+
+        if temp_alarm:
+            alarms.append(temp_alarm)
+
+        if ph_alarm:
+            alarms.append(ph_alarm)
+
+        if oxygen_alarm:
+            alarms.append(oxygen_alarm)
+
+        return alarms
