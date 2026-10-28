@@ -47,6 +47,8 @@ def setup_sensors(config):
     return temperature_sensor, ph_sensor, oxygen_sensor
 #endregion
 
+temperature_sensor, ph_sensor, oxygen_sensor = setup_sensors(config)
+
 create_database()
 logger = DataLogger()
 
@@ -56,7 +58,7 @@ service = MeasurementService(temperature_sensor, ph_sensor, oxygen_sensor, logge
 while True:
 
     measurement = service.collect_measurement()
-
+    
     print(measurement)
 
     time.sleep(60)
