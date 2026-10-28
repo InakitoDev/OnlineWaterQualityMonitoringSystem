@@ -9,32 +9,30 @@ class MeasurementService:
         self.logger = logger
         self.adc = ADCReader()
 
-def collect_measurement(self):
+    def collect_measurement(self):
 
-    try:
+        try:
 
-        temperature_current = self.adc.read_current(self.temperature_sensor.get_channel())
-        ph_current = self.adc.read_current(self.ph_sensor.get_channel())
-        oxygen_current = self.adc.read_current(self.oxygen_sensor.get_channel())
+            temperature_current = self.adc.read_current(self.temperature_sensor.get_channel())
+            ph_current = self.adc.read_current(self.ph_sensor.get_channel())
+            oxygen_current = self.adc.read_current(self.oxygen_sensor.get_channel())
 
-        temperature = self.temperature_sensor.read(temperature_current)
+            temperature = self.temperature_sensor.read(temperature_current)
 
-        ph = self.ph_sensor.read(ph_current)
+            ph = self.ph_sensor.read(ph_current)
 
-        oxygen = self.oxygen_sensor.read(oxygen_current)
+            oxygen = self.oxygen_sensor.read(oxygen_current)
 
-        self.logger.save_measurement(temperature, ph, oxygen)
-
-
-    
-        return {
-            "temperature": temperature + self.temperature_sensor.get_unit(), 
-            "ph": ph + self.ph_sensor.get_unit(), 
-            "oxygen": oxygen + self.oxygen_sensor.get_unit()
+            self.logger.save_measurement(temperature, ph, oxygen)
+     
+            return {
+                "temperature": temperature,
+                "ph": ph,
+                "oxygen": oxygen
             }
 
-    except Exception as error:
+        except Exception as error:
 
-        print(f"Measurement Error: {error}")
+            print(f"Measurement Error: {error}")
 
-        return None
+            return None
