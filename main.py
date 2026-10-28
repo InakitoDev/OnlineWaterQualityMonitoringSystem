@@ -1,53 +1,63 @@
 import json
+import time
 
-from sensors.temperaturesensor import TemperatureSensor
-from sensors.phsensor import PHSensor
-from sensors.oxygensensor import OxygenSensor
+from database.water_monitor_database import create_database
+from datalogger import DataLogger
+
+from sensors import TemperatureSensor, PHSensor, OxygenSensor
+
+from services.measurementservice import MeasurementService
+
+
+
+
+#region configuration from config.json and initialize sensors
 
 with open("config.json") as file:
     config = json.load(file)
 
-temp = TemperatureSensor(
-    "Temperature",
-    0,
-    config["temperature"]["min"],
-    config["temperature"]["max"],
-    config["temperature"]["unit"]
-)
 
-ph = PHSensor(
-    "pH",
-    1,
-    config["ph"]["min"],
-    config["ph"]["max"],
-    config["ph"]["unit"]
-)
 
-oxygen = OxygenSensor(
-    "Oxygen",
-    2,
-    config["oxygen"]["min"],
-    config["oxygen"]["max"],
-    config["oxygen"]["unit"]
-)
+def setup_sensors(config):
+    """Initialize sensors using the configuration."""
+    temperature_sensor = TemperatureSensor(
+        "Temperature",
+        config["temperature"]["channel"],
+        config["temperature"]["min"],
+        config["temperature"]["max"],
+        config["temperature"]["unit"]
+    )
 
-# Example currents
+    ph_sensor = PHSensor(
+        "pH",
+        config["ph"]["channel"],
+        config["ph"]["min"],
+        config["ph"]["max"],
+        config["ph"]["unit"]
+    )
 
-temp_current = 12
-ph_current = 11
-oxygen_current = 15
+    oxygen_sensor = OxygenSensor(
+        "Oxygen",
+        config["oxygen"]["channel"],
+        config["oxygen"]["min"],
+        config["oxygen"]["max"],
+        config["oxygen"]["unit"]
+    )
 
-print(
-    f"Temperature: {temp.read(temp_current)} "
-    f"{temp.unit}"
-)
+    return temperature_sensor, ph_sensor, oxygen_sensor
+#endregion
 
-print(
-    f"pH: {ph.read(ph_current)} "
-    f"{ph.unit}"
-)
+create_database()
+logger = DataLogger()
 
-print(
-    f"Oxygen: {oxygen.read(oxygen_current)} "
-    f"{oxygen.unit}"
-)
+
+service = MeasurementService(temperature_sensor, ph_sensor, oxygen_sensor, logger)
+
+while True:
+
+    measurement = service.collect_measurement()
+
+    print(measurement)
+
+    time.sleep(60)
+
