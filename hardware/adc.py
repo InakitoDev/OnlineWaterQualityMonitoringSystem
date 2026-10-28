@@ -3,33 +3,43 @@ import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 
 
-RESISTOR_VALUE = 165  # RISISTOR VALUE IN OHMS
-
-# ADS1115 initialization
-i2c = board.I2C()
-ads = ADS.ADS1115(i2c)
-
-# Channels initialization
-ch0 = AnalogIn(ads, 0)
-ch1 = AnalogIn(ads, 1)
-ch2 = AnalogIn(ads, 2)
-ch3 = AnalogIn(ads, 3)
+RESISTOR_VALUE = 165  # Resistance in ohms
 
 
-def voltage_to_current(voltage):
-    """
-    Convert voltage to current (mA)
-    when using a 165Ω resistor
-    """
+class ADCReader:
+    def __init__(self):
+        # Initialize I2C and ADS1115
+        self.i2c = board.I2C()
+        self.ads = ADS.ADS1115(self.i2c)
 
-    current = (voltage / RESISTOR_VALUE) * 1000
-    return current
+        # Initialize the four analog input channels
+        self.channels = {
+            0: AnalogIn(self.ads, 0),
+            1: AnalogIn(self.ads, 1),
+            2: AnalogIn(self.ads, 2),
+            3: AnalogIn(self.ads, 3),
+        }
 
+        
+    def voltage_to_current(self, voltage):
+        """Convert voltage to current in milliamps."""
+        return (voltage / RESISTOR_VALUE) * 1000
 
-def read_current(channel):
-    """
-    Read current from an ADS1115 channel
-    """
+    def read_current(self, channel):
+        """Read current in milliamps from an ADC channel."""
+        if channel not in self.channels:
+            raise ValueError(
+                f"Invalid ADC channel {channel}. Use 0, 1, 2, or 3."
+            )
 
-    voltage = channel.voltage
-    return voltage_to_current(voltage)
+        voltage = self.channels[channel].voltage
+        return self.voltage_to_current(voltage)
+
+    def read_voltage(self, channel):
+        """Read voltage from an ADC channel."""
+        if channel not in self.channels:
+            raise ValueError(
+                f"Invalid ADC channel {channel}. Use 0, 1, 2, or 3."
+            )
+
+        return self.channels[channel].voltage

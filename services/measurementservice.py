@@ -7,6 +7,7 @@ class MeasurementService:
         self.ph_sensor = ph_sensor
         self.oxygen_sensor = oxygen_sensor
         self.logger = logger
+        self.adc = ADCReader()
 
 def collect_measurement(self):
 
