@@ -547,3 +547,4 @@ footer {
   }
 }
 
+.chart-panel .expand-chart{cursor:zoom-in;color:#74839a;font-size:17px}.chart-panel .expand-chart:hover{color:#2771c6;background:#eef5ff;border-radius:5px}.chart-dialog{width:min(1000px,calc(100vw - 32px));max-width:none;border:1px solid #e0e7f0;border-radius:14px;padding:22px;background:#fff;color:#17243b;box-shadow:0 20px 70px #142b4c38}.chart-dialog::backdrop{background:#14233d80;backdrop-filter:blur(3px)}.dialog-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.dialog-heading h2{margin:0;font-size:17px}.dialog-heading p{margin:4px 0 0;color:#8290a4;font-size:12px}.chart-dialog canvas{display:block;width:100%;height:min(55vh,470px)}

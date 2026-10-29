@@ -48,7 +48,7 @@
           <article class="panel chart-panel">
             <div class="panel-heading">
               <h2>{{ title }} <span>(last 24 hours)</span></h2>
-              <button class="plain-button" title="Expand chart">↗</button>
+              <button class="plain-button expand-chart" data-chart="chart-{{ key }}" aria-label="Open {{ title }} graph" title="Open graph">↗</button>
             </div>
             <canvas id="chart-{{ key }}" data-key="{{ key }}" data-unit="{{ unit }}" data-color="{{ color }}" aria-label="{{ title }} history chart"></canvas>
             <div class="chart-legend"><i class="legend-{{ key }}" data-color="{{ color }}"></i>{{ title }}</div>
@@ -165,6 +165,10 @@
       </footer>
     </main>
 
+    <dialog id="chart-dialog" class="chart-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-heading"><div><h2 id="dialog-title">Graph</h2><p>Recent sensor measurements</p></div><button id="close-chart" class="icon-button" aria-label="Close graph">?</button></div>
+      <canvas id="expanded-chart"></canvas>
+    </dialog>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
   </body>
 </html>

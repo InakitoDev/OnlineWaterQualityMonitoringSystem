@@ -77,6 +77,24 @@
     try { await refresh(); } catch (error) { alert(error.message); } finally { button.classList.remove('loading'); }
   });
 
+  const chartDialog = document.getElementById('chart-dialog');
+  const expandedChart = document.getElementById('expanded-chart');
+  document.querySelectorAll('.expand-chart').forEach(button => {
+    button.addEventListener('click', () => {
+      const source = document.getElementById(button.dataset.chart);
+      expandedChart.dataset.key = source.dataset.key;
+      expandedChart.dataset.unit = source.dataset.unit;
+      expandedChart.dataset.color = source.dataset.color;
+      document.getElementById('dialog-title').textContent = `${labels[source.dataset.key]} - last 24 hours`;
+      chartDialog.showModal();
+      requestAnimationFrame(() => drawChart(expandedChart, allMeasurements));
+    });
+  });
+  document.getElementById('close-chart').addEventListener('click', () => chartDialog.close());
+  chartDialog.addEventListener('click', event => {
+    if (event.target === chartDialog) chartDialog.close();
+  });
+
   document.getElementById('show-readings').addEventListener('click', event => {
     const showAll = document.body.dataset.showAll !== 'true';
     document.body.dataset.showAll = String(showAll);
@@ -110,7 +128,10 @@
     finally { button.disabled = false; button.innerHTML = '↻ &nbsp;Read sensors now'; }
   });
 
-  window.addEventListener('resize', () => document.querySelectorAll('.chart-panel canvas').forEach(canvas => drawChart(canvas, allMeasurements)));
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.chart-panel canvas').forEach(canvas => drawChart(canvas, allMeasurements));
+    if (chartDialog.open) drawChart(expandedChart, allMeasurements);
+  });
   window.dashboardConfig = window.dashboardConfig || {};
   refresh().catch(() => {});
 })();
