@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f6fb">
+    <title>Water quality monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <div class="brand">Water quality monitor</div>
+          <p>Real-time monitoring of temperature, pH and dissolved oxygen</p>
+        </div>
+
+        <div class="top-actions">
+          <span class="connection"><i></i> Database connected</span>
+          <span class="updated">Latest reading: <b id="latest-time">{{ measurements[0][1] if measurements else 'No readings yet' }}</b></span>
+          <button class="icon-button" id="refresh" aria-label="Refresh dashboard" title="Refresh">↻</button>
+        </div>
+      </header>
+
+      {% set latest = measurements[0] if measurements else none %}
+
+      <section class="metrics" aria-label="Latest readings">
+        {% for key, title, icon, unit, color in [('temperature', 'Temperature', '♨', '°C', 'red'), ('ph', 'pH', '⚗', '', 'blue'), ('oxygen', 'Dissolved oxygen', 'O₂', 'mg/L', 'green')] %}
+          {% set value = latest[2] if key == 'temperature' and latest else (latest[3] if key == 'ph' and latest else (latest[4] if latest else none)) %}
+          <article class="metric-card {{ color }}">
+            <div class="metric-icon">{{ icon }}</div>
+            <div class="metric-copy">
+              <span class="metric-label">{{ title }}</span>
+              <strong>
+                {{ '%.1f'|format(value) if value is not none and key == 'temperature' else ('%.2f'|format(value) if value is not none else '—') }}
+                <small>{{ unit }}</small>
+              </strong>
+              <span class="range">Range {{ config[key]['min'] }}–{{ config[key]['max'] }} {{ unit }}</span>
+            </div>
+            <span class="badge" id="status-{{ key }}">● <span>Normal</span></span>
+          </article>
+        {% endfor %}
+      </section>
+
+      <section class="charts" aria-label="24 hour trends">
+        {% for key, title, unit, color in [('temperature', 'Temperature', '°C', '#ef5350'), ('ph', 'pH', 'pH', '#3987ef'), ('oxygen', 'Dissolved oxygen', 'mg/L', '#21a46b')] %}
+          <article class="panel chart-panel">
+            <div class="panel-heading">
+              <h2>{{ title }} <span>(last 24 hours)</span></h2>
+              <button class="plain-button" title="Expand chart">↗</button>
+            </div>
+            <canvas id="chart-{{ key }}" data-key="{{ key }}" data-unit="{{ unit }}" data-color="{{ color }}" aria-label="{{ title }} history chart"></canvas>
+            <div class="chart-legend"><i class="legend-{{ key }}" data-color="{{ color }}"></i>{{ title }}</div>
+          </article>
+        {% endfor %}
+      </section>
+
+      <section class="lower-grid">
+        <article class="panel table-panel">
+          <div class="panel-heading">
+            <h2>Recent measurements</h2>
+            <button class="text-button" id="show-readings">Show all <span>→</span></button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date &amp; time</th>
+                  <th>Temperature</th>
+                  <th>pH</th>
+                  <th>O₂ (mg/L)</th>
+                </tr>
+              </thead>
+              <tbody id="measurement-rows">
+                {% for row in measurements[:8] %}
+                  <tr>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ '%.1f'|format(row[2]) }} °C</td>
+                    <td>{{ '%.2f'|format(row[3]) }}</td>
+                    <td>{{ '%.1f'|format(row[4]) }}</td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="empty">No measurements recorded yet.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel table-panel">
+          <div class="panel-heading">
+            <h2><span class="bell">♟</span> Alarm history</h2>
+            <span class="subtle">{{ alarms|length }} events</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date &amp; time</th>
+                  <th>Sensor</th>
+                  <th>Status</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for alarm in alarms[:8] %}
+                  <tr>
+                    <td>{{ alarm[1] }}</td>
+                    <td>{{ alarm[2]|capitalize }}</td>
+                    <td>
+                      <span class="alarm-pill {{ 'normal' if alarm[4] == 'NORMALIZED' else 'warning' }}">
+                        {{ 'Normalized' if alarm[4] == 'NORMALIZED' else alarm[4]|capitalize }}
+                      </span>
+                    </td>
+                    <td>{{ alarm[3] }}</td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="empty">No alarms recorded.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel settings-panel">
+        <div class="panel-heading">
+          <h2>⚙ Sensor configuration</h2>
+          <span class="subtle">Set the conversion range for each sensor</span>
+        </div>
+
+        <form id="config-form" class="config-grid">
+          {% for key, label, unit in [('temperature', 'Temperature', '°C'), ('ph', 'pH', ''), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
+            <fieldset>
+              <legend>{{ label }}</legend>
+              <label>
+                Minimum ({{ unit }})
+                <input type="number" step="any" name="{{ key }}_min" value="{{ config[key]['min'] }}" required>
+              </label>
+              <label>
+                Maximum ({{ unit }})
+                <input type="number" step="any" name="{{ key }}_max" value="{{ config[key]['max'] }}" required>
+              </label>
+            </fieldset>
+          {% endfor %}
+
+          <div class="save-area">
+            <button class="save-button" type="submit">▣ &nbsp;Save settings</button>
+            <span id="save-message" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <footer>
+        <span>Water quality monitoring</span>
+        <span>Sensor refresh is started manually from this dashboard.</span>
+        <button class="read-button" id="read-sensors">↻ &nbsp;Read sensors now</button>
+      </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  </body>
+</html>
+

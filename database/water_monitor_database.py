@@ -1,6 +1,7 @@
 import sqlite3
+from pathlib import Path
 
-DATABASE_NAME = "water_monitor.db"
+DATABASE_NAME = str(Path(__file__).resolve().parent.parent / "water_monitor.db")
 
 
 def create_database():
