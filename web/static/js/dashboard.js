@@ -155,11 +155,30 @@
     });
   }
 
+  function updateMetricCards(reading, config) {
+    if (!reading) return;
+    keys.forEach(key => {
+      const value = reading[key];
+      const valueElement = document.getElementById(`value-${key}`);
+      if (valueElement && value != null) {
+        const decimals = key === 'temperature' ? 1 : 2;
+        const unit = valueElement.dataset.unit;
+        valueElement.innerHTML = `${Number(value).toFixed(decimals)}${unit ? ` <small>${unit}</small>` : ''}`;
+      }
+      const rangeElement = document.getElementById(`range-${key}`);
+      if (rangeElement && config && config[key]) {
+        const unit = valueElement ? valueElement.dataset.unit : '';
+        rangeElement.textContent = `Range ${config[key].min}-${config[key].max}${unit ? ` ${unit}` : ''}`;
+      }
+    });
+  }
+
   function render(data) {
     allMeasurements = data.measurements || [];
     if (data.config) window.dashboardConfig = data.config;
     const latest = allMeasurements[allMeasurements.length - 1];
     document.getElementById('latest-time').textContent = latest ? latest.timestamp : 'No readings yet';
+    updateMetricCards(latest, data.config || window.dashboardConfig);
     document.querySelectorAll('.chart-panel canvas').forEach(canvas => {
       attachChartHover(canvas);
       drawChart(canvas, allMeasurements);
@@ -275,5 +294,5 @@
   window.dashboardConfig = window.dashboardConfig || {};
   refresh().catch(() => {});
   // Keep readings and chart points current while the dashboard stays open.
-  window.setInterval(() => refresh().catch(() => {}), 60_000);
+  window.setInterval(() => refresh().catch(() => {}), 5_000);
 })();

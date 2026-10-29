@@ -29,14 +29,14 @@
         {% for key, title, icon, unit, color in [('temperature', 'Temperature', '♨', '°C', 'red'), ('ph', 'pH', '⚗', '', 'blue'), ('oxygen', 'Dissolved oxygen', 'O₂', 'mg/L', 'green')] %}
           {% set value = latest[2] if key == 'temperature' and latest else (latest[3] if key == 'ph' and latest else (latest[4] if latest else none)) %}
           <article class="metric-card {{ color }}">
-            <div class="metric-icon">{{ icon }}</div>
+            <div class="metric-icon">{% if key == 'temperature' %}&deg;C{% elif key == 'ph' %}pH{% else %}O2{% endif %}</div>
             <div class="metric-copy">
               <span class="metric-label">{{ title }}</span>
-              <strong>
+              <strong id="value-{{ key }}" data-unit="{{ unit }}">
                 {{ '%.1f'|format(value) if value is not none and key == 'temperature' else ('%.2f'|format(value) if value is not none else '—') }}
                 <small>{{ unit }}</small>
               </strong>
-              <span class="range">Range {{ config[key]['min'] }}–{{ config[key]['max'] }} {{ unit }}</span>
+              <span class="range" id="range-{{ key }}">Range {{ config[key]['min'] }}–{{ config[key]['max'] }} {{ unit }}</span>
             </div>
             <span class="badge" id="status-{{ key }}">● <span>Normal</span></span>
           </article>
