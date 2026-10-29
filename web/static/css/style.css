@@ -593,6 +593,24 @@ footer {
   font-size: 12px;
 }
 
+.time-window-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #718097;
+  font-size: 12px;
+}
+
+.time-window-label select {
+  min-width: 145px;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid #dce3ed;
+  border-radius: 7px;
+  background: #fff;
+  color: #34445f;
+  font: inherit;
+}
+
 .chart-dialog canvas {
   display: block;
   width: 100%;
@@ -742,6 +760,17 @@ body {
 
   .chart-dialog canvas {
     height: min(58dvh, 520px);
+  }
+
+  .dialog-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .time-window-label {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
   }
 }
 

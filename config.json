@@ -1,26 +1,24 @@
 {
     "temperature": {
         "channel": 0,
-        "min": 0,
-        "max": 100,
+        "min": 10.0,
+        "max": 100.0,
         "alarm_low": 5,
         "alarm_high": 90,
-        "unit": "°C"
+        "unit": "\u00b0C"
     },
-
     "ph": {
         "channel": 1,
-        "min": 0,
-        "max": 14,
+        "min": 1.0,
+        "max": 14.0,
         "alarm_low": 6.5,
         "alarm_high": 8.5,
         "unit": "pH"
     },
-
     "oxygen": {
         "channel": 2,
-        "min": 0,
-        "max": 20,
+        "min": 0.0,
+        "max": 20.0,
         "alarm_low": 4,
         "alarm_high": 18,
         "unit": "mg/L"

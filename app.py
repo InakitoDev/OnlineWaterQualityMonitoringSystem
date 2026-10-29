@@ -7,6 +7,7 @@ from database.water_monitor_database import (
     create_database,
     get_alarm_history,
     get_latest_measurements,
+    get_measurements_in_window,
 )
 from datalogger import DataLogger
 from sensors import OxygenSensor, PHSensor, TemperatureSensor
@@ -66,9 +67,8 @@ def _sensor_collection_loop():
         threading.Event().wait(60)
 
 
-@app.before_request
-def ensure_sensor_collection_running():
-    """Start one collector on first access, including under Flask's reloader."""
+def start_sensor_collection():
+    """Start the background collector once when the application is launched."""
     global _collector_started
     if _collector_started:
         return
@@ -91,8 +91,14 @@ def dashboard():
 @app.get("/api/dashboard")
 def api_dashboard():
     data = dashboard_data()
+    window = request.args.get("window", "24h")
+    try:
+        measurements = get_measurements_in_window(window)
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
     return jsonify({
-        "measurements": [dict(id=r[0], timestamp=r[1], temperature=r[2], ph=r[3], oxygen=r[4]) for r in reversed(data["measurements"])],
+        "window": window,
+        "measurements": [dict(id=r[0], timestamp=r[1], temperature=r[2], ph=r[3], oxygen=r[4]) for r in measurements],
         "alarms": [dict(id=r[0], timestamp=r[1], sensor=r[2], value=r[3], status=r[4]) for r in data["alarms"]],
         "config": data["config"],
     })
@@ -135,4 +141,5 @@ def save_config():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    start_sensor_collection()
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

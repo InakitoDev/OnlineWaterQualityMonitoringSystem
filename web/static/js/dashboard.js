@@ -7,6 +7,24 @@
   };
   let allMeasurements = [];
   let tooltip = null;
+  let selectedWindow = '24h';
+
+  const windowMilliseconds = {
+    '1h': 60 * 60 * 1000,
+    '6h': 6 * 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+  };
+
+  function parseTimestamp(timestamp) {
+    const normalized = timestamp.includes('T') ? timestamp : `${timestamp.replace(' ', 'T')}Z`;
+    return Date.parse(normalized);
+  }
+
+  function windowTitle() {
+    return ({'1h': 'last hour', '6h': 'last 6 hours', '24h': 'last 24 hours', '7d': 'last 7 days', '30d': 'last 30 days', all: 'all recorded data'})[selectedWindow];
+  }
 
   function drawChart(canvas, rows) {
     const rect = canvas.getBoundingClientRect();
@@ -21,7 +39,7 @@
     const color = canvas.dataset.color;
     const field = key === 'temperature' ? 'temperature' : key;
     const points = rows
-      .map(row => ({row, value: Number(row[field])}))
+      .map(row => ({row, value: Number(row[field]), time: parseTimestamp(row.timestamp)}))
       .filter(point => Number.isFinite(point.value));
     const values = points.map(point => point.value);
     const min = values.length ? Math.min(...values) : 0;
@@ -50,11 +68,32 @@
       );
     }
 
+    const now = Date.now();
+    const period = windowMilliseconds[selectedWindow];
+    const firstPointTime = points.find(point => Number.isFinite(point.time))?.time ?? now;
+    const lastPointTime = [...points].reverse().find(point => Number.isFinite(point.time))?.time ?? now;
+    const startTime = period ? now - period : firstPointTime;
+    const endTime = period ? now : Math.max(lastPointTime, startTime + 1000);
+    const xForPoint = point => padding.left + plotW * Math.max(0, Math.min(1, (point.time - startTime) / (endTime - startTime)));
+
     for (let i = 0; i < 5; i++) {
-      const x = padding.left + plotW * i / 4;
+      const fraction = i / 4;
+      const x = padding.left + plotW * fraction;
+      const tickTime = startTime + (endTime - startTime) * fraction;
+      let tickLabel;
+      if (period && period <= 24 * 60 * 60 * 1000) {
+        const agoMinutes = Math.round((endTime - tickTime) / 60000);
+        tickLabel = agoMinutes === 0 ? 'Now' : agoMinutes >= 60
+          ? `${Math.round(agoMinutes / 60)}h ago`
+          : `${agoMinutes}m ago`;
+      } else if (i === 4 && period) {
+        tickLabel = 'Now';
+      } else {
+        tickLabel = new Date(tickTime).toLocaleDateString([], {month: 'short', day: 'numeric'});
+      }
       ctx.fillStyle = '#8592a5';
       ctx.textAlign = i === 0 ? 'left' : i === 4 ? 'right' : 'center';
-      ctx.fillText(['24h ago', '18h', '12h', '6h', 'Now'][i], x, h - 8);
+      ctx.fillText(tickLabel, x, h - 8);
     }
 
     if (!points.length) {
@@ -64,7 +103,7 @@
       return;
     }
 
-    const xAt = i => padding.left + plotW * (points.length === 1 ? .5 : i / (points.length - 1));
+    const xAt = i => xForPoint(points[i]);
     const yAt = value => padding.top + plotH * (max === min ? .5 : (max - value) / (max - min));
     const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + plotH);
     gradient.addColorStop(0, color + '36');
@@ -97,7 +136,7 @@
     ctx.lineJoin = 'round';
     ctx.stroke();
     canvas.__chartPoints = points;
-    canvas.__chartGeometry = {xAt, yAt, padding, plotW};
+    canvas.__chartGeometry = {xAt, yAt, padding, plotW, positions: points.map((point, i) => ({x: xAt(i), i}))};
     const hoverIndex = canvas.__hoverIndex;
 
     if (hoverIndex != null && points[hoverIndex]) {
@@ -122,8 +161,9 @@
 
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
-      const ratio = Math.max(0, Math.min(1, (x - geometry.padding.left) / geometry.plotW));
-      const index = points.length === 1 ? 0 : Math.round(ratio * (points.length - 1));
+      const index = geometry.positions.reduce((closest, point) => (
+        Math.abs(point.x - x) < Math.abs(geometry.positions[closest].x - x) ? point.i : closest
+      ), 0);
       canvas.__hoverIndex = index;
       drawChart(canvas, allMeasurements);
 
@@ -174,6 +214,9 @@
   }
 
   function render(data) {
+    selectedWindow = data.window || selectedWindow;
+    const selector = document.getElementById('chart-window');
+    if (selector) selector.value = selectedWindow;
     allMeasurements = data.measurements || [];
     if (data.config) window.dashboardConfig = data.config;
     const latest = allMeasurements[allMeasurements.length - 1];
@@ -183,6 +226,7 @@
       attachChartHover(canvas);
       drawChart(canvas, allMeasurements);
     });
+    if (chartDialog.open) drawChart(expandedChart, allMeasurements);
     if (latest && (data.config || window.dashboardConfig)) updateStatuses(latest, data.config || window.dashboardConfig);
     const rows = document.getElementById('measurement-rows');
     const reversedMeasurements = [...allMeasurements].reverse();
@@ -197,7 +241,7 @@
   }
 
   async function refresh() {
-    const response = await fetch('/api/dashboard');
+    const response = await fetch(`/api/dashboard?window=${encodeURIComponent(selectedWindow)}`);
     if (!response.ok) throw new Error('Could not load dashboard data');
     render(await response.json());
   }
@@ -227,13 +271,23 @@
       expandedChart.dataset.key = source.dataset.key;
       expandedChart.dataset.unit = source.dataset.unit;
       expandedChart.dataset.color = source.dataset.color;
-      document.getElementById('dialog-title').textContent = `${labels[source.dataset.key]} - last 24 hours`;
+      document.getElementById('dialog-title').textContent = `${labels[source.dataset.key]} - ${windowTitle()}`;
       chartDialog.showModal();
       chartDialog.appendChild(tooltip);
       requestAnimationFrame(() => drawChart(expandedChart, allMeasurements));
     });
   });
   document.getElementById('close-chart').addEventListener('click', () => chartDialog.close());
+  document.getElementById('chart-window').addEventListener('change', async event => {
+    selectedWindow = event.target.value;
+    document.getElementById('dialog-title').textContent = `${labels[expandedChart.dataset.key]} - ${windowTitle()}`;
+    try {
+      await refresh();
+      if (chartDialog.open) drawChart(expandedChart, allMeasurements);
+    } catch (error) {
+      alert(error.message);
+    }
+  });
   chartDialog.addEventListener('close', () => {
     tooltip.style.display = 'none';
     document.body.appendChild(tooltip);

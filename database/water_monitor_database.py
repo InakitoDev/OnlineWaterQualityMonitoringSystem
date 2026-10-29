@@ -80,6 +80,35 @@ def get_latest_measurements(limit=10):
         return cursor.fetchall()
 
 
+def get_measurements_in_window(window="24h"):
+    """Return chronologically ordered readings for a supported time window."""
+    modifiers = {
+        "1h": "-1 hours",
+        "6h": "-6 hours",
+        "24h": "-24 hours",
+        "7d": "-7 days",
+        "30d": "-30 days",
+    }
+    with sqlite3.connect(DATABASE_NAME) as conn:
+        cursor = conn.cursor()
+        if window == "all":
+            cursor.execute("""
+                SELECT id, timestamp, temperature, ph, oxygen
+                FROM measurements
+                ORDER BY timestamp ASC, id ASC
+            """)
+        elif window in modifiers:
+            cursor.execute("""
+                SELECT id, timestamp, temperature, ph, oxygen
+                FROM measurements
+                WHERE timestamp >= datetime('now', ?)
+                ORDER BY timestamp ASC, id ASC
+            """, (modifiers[window],))
+        else:
+            raise ValueError("Unsupported measurement window")
+        return cursor.fetchall()
+
+
 def get_measurements_between(start_time, end_time):
     """
     Return measurements within a time range.

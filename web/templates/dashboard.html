@@ -166,7 +166,7 @@
     </main>
 
     <dialog id="chart-dialog" class="chart-dialog" aria-labelledby="dialog-title">
-      <div class="dialog-heading"><div><h2 id="dialog-title">Graph</h2><p>Recent sensor measurements</p></div><button id="close-chart" class="icon-button" aria-label="Close graph">?</button></div>
+      <div class="dialog-heading"><div><h2 id="dialog-title">Graph</h2><p>Recent sensor measurements</p></div><label class="time-window-label" for="chart-window">Time window<select id="chart-window"><option value="1h">Last hour</option><option value="6h">Last 6 hours</option><option value="24h" selected>Last 24 hours</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="all">All data</option></select></label><button id="close-chart" class="icon-button" aria-label="Close graph">X</button></div>
       <canvas id="expanded-chart"></canvas>
     </dialog>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
