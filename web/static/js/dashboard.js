@@ -130,10 +130,15 @@
       expandedChart.dataset.color = source.dataset.color;
       document.getElementById('dialog-title').textContent = `${labels[source.dataset.key]} - last 24 hours`;
       chartDialog.showModal();
+      chartDialog.appendChild(tooltip);
       requestAnimationFrame(() => drawChart(expandedChart, allMeasurements));
     });
   });
   document.getElementById('close-chart').addEventListener('click', () => chartDialog.close());
+  chartDialog.addEventListener('close', () => {
+    tooltip.style.display = 'none';
+    document.body.appendChild(tooltip);
+  });
   chartDialog.addEventListener('click', event => {
     if (event.target === chartDialog) chartDialog.close();
   });
