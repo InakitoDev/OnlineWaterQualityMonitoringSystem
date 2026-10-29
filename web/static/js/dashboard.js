@@ -2,6 +2,7 @@
   const keys = ['temperature', 'ph', 'oxygen'];
   const labels = {temperature: 'Temperature', ph: 'pH', oxygen: 'O₂'};
   let allMeasurements = [];
+  let tooltip = null;
 
   function drawChart(canvas, rows) {
     const rect = canvas.getBoundingClientRect();
@@ -13,9 +14,10 @@
     const w = rect.width, h = rect.height;
     const key = canvas.dataset.key, color = canvas.dataset.color;
     const field = key === 'temperature' ? 'temperature' : key;
-    const points = rows.map(r => Number(r[field])).filter(Number.isFinite);
-    const min = points.length ? Math.min(...points) : 0;
-    const max = points.length ? Math.max(...points) : 1;
+    const points = rows.map(row => ({row, value: Number(row[field])})).filter(point => Number.isFinite(point.value));
+    const values = points.map(point => point.value);
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 1;
     const padding = {left: 31, right: 6, top: 12, bottom: 22};
     const plotW = w - padding.left - padding.right, plotH = h - padding.top - padding.bottom;
     ctx.font = '9px DM Sans, Arial';
@@ -37,10 +39,46 @@
     const yAt = value => padding.top + plotH * (max === min ? .5 : (max - value) / (max - min));
     const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + plotH);
     gradient.addColorStop(0, color + '36'); gradient.addColorStop(1, color + '04');
-    ctx.beginPath(); points.forEach((value, i) => i ? ctx.lineTo(xAt(i), yAt(value)) : ctx.moveTo(xAt(i), yAt(value)));
+    ctx.beginPath(); points.forEach((point, i) => i ? ctx.lineTo(xAt(i), yAt(point.value)) : ctx.moveTo(xAt(i), yAt(point.value)));
     ctx.lineTo(xAt(points.length - 1), padding.top + plotH); ctx.lineTo(xAt(0), padding.top + plotH); ctx.closePath(); ctx.fillStyle = gradient; ctx.fill();
-    ctx.beginPath(); points.forEach((value, i) => i ? ctx.lineTo(xAt(i), yAt(value)) : ctx.moveTo(xAt(i), yAt(value)));
+    ctx.beginPath(); points.forEach((point, i) => i ? ctx.lineTo(xAt(i), yAt(point.value)) : ctx.moveTo(xAt(i), yAt(point.value)));
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    canvas.__chartPoints = points;
+    canvas.__chartGeometry = {xAt, yAt, padding, plotW};
+    const hoverIndex = canvas.__hoverIndex;
+    if (hoverIndex != null && points[hoverIndex]) {
+      ctx.beginPath(); ctx.arc(xAt(hoverIndex), yAt(points[hoverIndex].value), 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  function attachChartHover(canvas) {
+    if (canvas.__hoverAttached) return;
+    canvas.__hoverAttached = true;
+    canvas.addEventListener('pointermove', event => {
+      const points = canvas.__chartPoints || [];
+      const geometry = canvas.__chartGeometry;
+      if (!points.length || !geometry) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, (x - geometry.padding.left) / geometry.plotW));
+      const index = points.length === 1 ? 0 : Math.round(ratio * (points.length - 1));
+      canvas.__hoverIndex = index;
+      drawChart(canvas, allMeasurements);
+      const point = points[index];
+      const key = canvas.dataset.key;
+      const decimals = key === 'ph' ? 2 : 1;
+      tooltip.textContent = `${point.row.timestamp}  ·  ${point.value.toFixed(decimals)} ${canvas.dataset.unit}`;
+      tooltip.style.display = 'block';
+      const tipRect = tooltip.getBoundingClientRect();
+      tooltip.style.left = `${Math.min(event.clientX + 14, window.innerWidth - tipRect.width - 10)}px`;
+      tooltip.style.top = `${Math.max(8, event.clientY - tipRect.height - 12)}px`;
+    });
+    canvas.addEventListener('pointerleave', () => {
+      canvas.__hoverIndex = null;
+      drawChart(canvas, allMeasurements);
+      tooltip.style.display = 'none';
+    });
   }
 
   function updateStatuses(reading, config) {
@@ -59,7 +97,7 @@
     if (data.config) window.dashboardConfig = data.config;
     const latest = allMeasurements[allMeasurements.length - 1];
     document.getElementById('latest-time').textContent = latest ? latest.timestamp : 'No readings yet';
-    document.querySelectorAll('.chart-panel canvas').forEach(canvas => drawChart(canvas, allMeasurements));
+    document.querySelectorAll('.chart-panel canvas').forEach(canvas => { attachChartHover(canvas); drawChart(canvas, allMeasurements); });
     if (latest && (data.config || window.dashboardConfig)) updateStatuses(latest, data.config || window.dashboardConfig);
     const rows = document.getElementById('measurement-rows');
     const visible = document.body.dataset.showAll === 'true' ? [...allMeasurements].reverse() : [...allMeasurements].reverse().slice(0, 8);
@@ -79,6 +117,11 @@
 
   const chartDialog = document.getElementById('chart-dialog');
   const expandedChart = document.getElementById('expanded-chart');
+  tooltip = document.createElement('div');
+  tooltip.className = 'chart-tooltip';
+  tooltip.setAttribute('role', 'status');
+  document.body.appendChild(tooltip);
+  attachChartHover(expandedChart);
   document.querySelectorAll('.expand-chart').forEach(button => {
     button.addEventListener('click', () => {
       const source = document.getElementById(button.dataset.chart);
