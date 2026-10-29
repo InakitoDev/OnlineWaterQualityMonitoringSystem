@@ -140,6 +140,34 @@ def save_config():
         return jsonify(error=str(error)), 400
 
 
+@app.post("/api/alarms")
+def save_alarm_limits():
+    payload = request.get_json(silent=True) or request.form
+    updated = {}
+    try:
+        for key in ("temperature", "ph", "oxygen"):
+            low = float(payload[f"{key}_alarm_low"])
+            high = float(payload[f"{key}_alarm_high"])
+            if low >= high:
+                raise ValueError(f"{key}: low alarm must be lower than high alarm")
+            updated[key] = (low, high)
+
+        original = {key: dict(configuration.config[key]) for key in updated}
+        try:
+            for key, (low, high) in updated.items():
+                configuration.config[key]["alarm_low"] = low
+                configuration.config[key]["alarm_high"] = high
+            configuration.validate()
+            configuration.save()
+        except Exception:
+            configuration.config.update(original)
+            configuration.save()
+            raise
+        return jsonify(message="Alarm limits saved", config=configuration.config)
+    except (KeyError, TypeError, ValueError) as error:
+        return jsonify(error=str(error)), 400
+
+
 if __name__ == "__main__":
     start_sensor_collection()
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

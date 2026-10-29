@@ -356,6 +356,10 @@ tbody tr:last-child td {
   padding: 15px 16px 14px;
 }
 
+.alarm-settings-panel {
+  margin-top: 14px;
+}
+
 .config-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr) 1.1fr;

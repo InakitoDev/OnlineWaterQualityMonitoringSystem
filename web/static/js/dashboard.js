@@ -324,6 +324,28 @@
     }
   });
 
+  document.getElementById('alarm-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const message = document.getElementById('alarm-save-message');
+    const payload = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      const response = await fetch('/api/alarms', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save alarm limits');
+      window.dashboardConfig = result.config;
+      message.textContent = 'Alarm limits saved';
+      message.style.color = '';
+      await refresh();
+    } catch (error) {
+      message.textContent = error.message;
+      message.style.color = '#b54734';
+    }
+  });
+
   document.getElementById('read-sensors').addEventListener('click', async event => {
     const button = event.currentTarget;
     button.disabled = true;

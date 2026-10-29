@@ -158,6 +158,26 @@
         </form>
       </section>
 
+      <section class="panel settings-panel alarm-settings-panel">
+        <div class="panel-heading">
+          <h2>Alarm thresholds</h2>
+          <span class="subtle">Set low and high limits that trigger warnings</span>
+        </div>
+        <form id="alarm-form" class="config-grid">
+          {% for key, label, unit in [('temperature', 'Temperature', '?C'), ('ph', 'pH', ''), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
+            <fieldset>
+              <legend>{{ label }}</legend>
+              <label>Low alarm ({{ unit }})<input type="number" step="any" name="{{ key }}_alarm_low" value="{{ config[key]['alarm_low'] }}" required></label>
+              <label>High alarm ({{ unit }})<input type="number" step="any" name="{{ key }}_alarm_high" value="{{ config[key]['alarm_high'] }}" required></label>
+            </fieldset>
+          {% endfor %}
+          <div class="save-area">
+            <button class="save-button" type="submit">Save alarm limits</button>
+            <span id="alarm-save-message" role="status"></span>
+          </div>
+        </form>
+      </section>
+
       <footer>
         <span>Water quality monitoring</span>
         <span>Sensor refresh is started manually from this dashboard.</span>
