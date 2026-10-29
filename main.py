@@ -8,7 +8,7 @@ from sensors import TemperatureSensor, PHSensor, OxygenSensor
 
 from services.measurementservice import MeasurementService
 from services.alarmservice import AlarmService
-
+from services.configurationservice import ConfigurationService
 
 
 #region configuration from config.json and initialize sensors
@@ -47,12 +47,17 @@ def setup_sensors(config):
     return temperature_sensor, ph_sensor, oxygen_sensor
 #endregion
 
-temperature_sensor, ph_sensor, oxygen_sensor = setup_sensors(config)
+
+
+configuration_service = ConfigurationService()
+
+
+temperature_sensor, ph_sensor, oxygen_sensor = setup_sensors(configuration_service.config)
 
 create_database()
 logger = DataLogger()
 
-alarm_service = AlarmService(config)
+alarm_service = AlarmService(configuration_service.config)
 
 measurement_service = MeasurementService(temperature_sensor, ph_sensor, oxygen_sensor, logger)
 
