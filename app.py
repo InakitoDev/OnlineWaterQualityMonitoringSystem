@@ -1,4 +1,6 @@
 """Flask dashboard for the water quality monitor."""
+import threading
+
 from flask import Flask, jsonify, render_template, request
 
 from database.water_monitor_database import (
@@ -8,11 +10,16 @@ from database.water_monitor_database import (
 )
 from datalogger import DataLogger
 from sensors import OxygenSensor, PHSensor, TemperatureSensor
+from services.alarmservice import AlarmService
 from services.configurationservice import ConfigurationService
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 configuration = ConfigurationService("config.json")
+alarm_service = AlarmService(configuration.config)
 create_database()
+_sensor_lock = threading.Lock()
+_collector_start_lock = threading.Lock()
+_collector_started = False
 
 
 def build_sensors():
@@ -30,6 +37,50 @@ def dashboard_data():
         "alarms": get_alarm_history(20),
         "config": configuration.config,
     }
+
+
+def collect_sensor_reading():
+    """Read and persist one set of values, serializing ADC access."""
+    from services.measurementservice import MeasurementService
+
+    with _sensor_lock:
+        service = MeasurementService(*build_sensors(), DataLogger())
+        reading = service.collect_measurement()
+        if reading is not None:
+            alarm_service.check_all(
+                reading["temperature"], reading["ph"], reading["oxygen"]
+            )
+        return reading
+
+
+def _sensor_collection_loop():
+    """Collect continuously while the Flask process is running."""
+    while True:
+        try:
+            reading = collect_sensor_reading()
+            if reading is None:
+                app.logger.error("Automatic sensor reading failed")
+        except Exception:
+            app.logger.exception("Automatic sensor reading failed")
+        # Wait after each attempt so errors do not create a tight retry loop.
+        threading.Event().wait(60)
+
+
+@app.before_request
+def ensure_sensor_collection_running():
+    """Start one collector on first access, including under Flask's reloader."""
+    global _collector_started
+    if _collector_started:
+        return
+    with _collector_start_lock:
+        if not _collector_started:
+            thread = threading.Thread(
+                target=_sensor_collection_loop,
+                name="water-sensor-collector",
+                daemon=True,
+            )
+            thread.start()
+            _collector_started = True
 
 
 @app.get("/")
@@ -51,11 +102,7 @@ def api_dashboard():
 def measure_now():
     """Read the configured physical sensors once and persist the result."""
     try:
-        from services.measurementservice import MeasurementService
-
-        sensors = build_sensors()
-        service = MeasurementService(*sensors, DataLogger())
-        reading = service.collect_measurement()
+        reading = collect_sensor_reading()
         if reading is None:
             return jsonify(error="Sensor reading failed. Check the ADC connection and sensor wiring."), 503
         return jsonify(reading), 201
