@@ -5,10 +5,7 @@ from database.water_monitor_database import create_database
 from datalogger import DataLogger
 
 from sensors import TemperatureSensor, PHSensor, OxygenSensor
-
-from services.measurementservice import MeasurementService
-from services.alarmservice import AlarmService
-from services.configurationservice import ConfigurationService
+from services import MeasurementService, AlarmService, ConfigurationService
 
 
 #region configuration from config.json and initialize sensors
