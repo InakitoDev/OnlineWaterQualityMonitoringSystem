@@ -137,7 +137,7 @@
         </div>
 
         <form id="config-form" class="config-grid">
-          {% for key, label, unit in [('temperature', 'Temperature', '°C'), ('ph', 'pH', ''), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
+          {% for key, label, unit in [('temperature', 'Temperature', '°C'), ('ph', 'pH', 'pH'), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
             <fieldset>
               <legend>{{ label }}</legend>
               <label>
@@ -164,7 +164,7 @@
           <span class="subtle">Set low and high limits that trigger warnings</span>
         </div>
         <form id="alarm-form" class="config-grid">
-          {% for key, label, unit in [('temperature', 'Temperature', '?C'), ('ph', 'pH', ''), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
+          {% for key, label, unit in [('temperature', 'Temperature', '°C'), ('ph', 'pH', 'pH'), ('oxygen', 'Dissolved oxygen', 'mg/L')] %}
             <fieldset>
               <legend>{{ label }}</legend>
               <label>Low alarm ({{ unit }})<input type="number" step="any" name="{{ key }}_alarm_low" value="{{ config[key]['alarm_low'] }}" required></label>
