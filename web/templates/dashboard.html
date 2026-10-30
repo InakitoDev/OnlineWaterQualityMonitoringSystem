@@ -63,7 +63,7 @@
             <button class="text-button" id="show-readings">Show all <span>→</span></button>
           </div>
 
-          <div class="table-wrap">
+          <div class="table-wrap" tabindex="0">
             <table>
               <thead>
                 <tr>
@@ -74,7 +74,7 @@
                 </tr>
               </thead>
               <tbody id="measurement-rows">
-                {% for row in measurements[:8] %}
+                {% for row in measurements[:20] %}
                   <tr>
                     <td>{{ row[1] }}</td>
                     <td>{{ '%.1f'|format(row[2]) }} °C</td>
@@ -97,7 +97,7 @@
             <span class="subtle">{{ alarms|length }} events</span>
           </div>
 
-          <div class="table-wrap">
+          <div class="table-wrap" tabindex="0">
             <table>
               <thead>
                 <tr>
@@ -108,7 +108,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for alarm in alarms[:8] %}
+                {% for alarm in alarms %}
                   <tr>
                     <td>{{ alarm[1] }}</td>
                     <td>{{ alarm[2]|capitalize }}</td>

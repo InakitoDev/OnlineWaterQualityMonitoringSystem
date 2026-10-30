@@ -232,7 +232,7 @@
     const reversedMeasurements = [...allMeasurements].reverse();
     const visible = document.body.dataset.showAll === 'true'
       ? reversedMeasurements
-      : reversedMeasurements.slice(0, 8);
+      : reversedMeasurements.slice(0, 20);
     rows.innerHTML = visible.length
       ? visible.map(row => (
         `<tr><td>${row.timestamp}</td><td>${Number(row.temperature).toFixed(1)} °C</td><td>${Number(row.ph).toFixed(2)}</td><td>${Number(row.oxygen).toFixed(1)}</td></tr>`

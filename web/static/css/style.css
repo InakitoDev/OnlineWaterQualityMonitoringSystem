@@ -300,7 +300,22 @@ body {
 
 .table-wrap {
   overflow: auto;
+  max-height: 300px;
   margin-top: 11px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5d6 #f2f5f9;
+}
+
+.table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table-wrap:focus-visible {
+  outline: 2px solid var(--info);
+  outline-offset: 2px;
 }
 
 table {
